@@ -7,6 +7,9 @@ using static Scripts.Structure.WeaponDefinition.HardPointDef;
 using static Scripts.Structure.WeaponDefinition.HardPointDef.Prediction;
 using static Scripts.Structure.WeaponDefinition.TargetingDef.BlockTypes;
 using static Scripts.Structure.WeaponDefinition.TargetingDef.Threat;
+using static Scripts.Structure.WeaponDefinition.TargetingDef;
+using static Scripts.Structure.WeaponDefinition.TargetingDef.CommunicationDef.Comms;
+using static Scripts.Structure.WeaponDefinition.TargetingDef.CommunicationDef.SecurityMode;
 using static Scripts.Structure.WeaponDefinition.HardPointDef.HardwareDef;
 using static Scripts.Structure.WeaponDefinition.HardPointDef.HardwareDef.HardwareType;
 
@@ -20,17 +23,15 @@ namespace Scripts {
 				Projectiles, Characters, Grids,   // threats percieved automatically without changing menu settings
 			},
 			SubSystems = new[] {
-				Thrust, Utility, Offense, Power, Production, Jumping, Steering, Any,
+				Any,
 			},
 			ClosestFirst = true, // tries to pick closest targets first (blocks on grids, projectiles, etc...).
-			IgnoreDumbProjectiles = true, // Don't fire at non-smart projectiles.
+			IgnoreDumbProjectiles = false, // Don't fire at non-smart projectiles.
 			LockedSmartOnly = false, // Only fire at smart projectiles that are locked on to parent grid.
-			MinimumDiameter = 0, // 0 = unlimited, Minimum radius of threat to engage.
-			MaximumDiameter = 0, // 0 = unlimited, Maximum radius of threat to engage.
 			MaxTargetDistance = 1400, // 0 = unlimited, Maximum target distance that targets will be automatically shot at.
 			MinTargetDistance = 0, // 0 = unlimited, Min target distance that targets will be automatically shot at.
-			TopTargets = 0, // 0 = unlimited, max number of top targets to randomize between.
-			TopBlocks = 0, // 0 = unlimited, max number of blocks to randomize between
+			TopTargets = 1, // 0 = unlimited, max number of top targets to randomize between.
+			TopBlocks = 1, // 0 = unlimited, max number of blocks to randomize between
 			StopTrackingSpeed = 1000, // do not track target threats traveling faster than this speed
 		};
 
@@ -39,17 +40,15 @@ namespace Scripts {
 				 Characters, Projectiles, Grids,   // threats percieved automatically without changing menu settings
 			},
 			SubSystems = new[] {
-				Thrust, Utility, Offense, Power, Production, Jumping, Steering, Any,
+				Any,
 			},
 			ClosestFirst = true, // tries to pick closest targets first (blocks on grids, projectiles, etc...).
-			IgnoreDumbProjectiles = true, // Don't fire at non-smart projectiles.
+			IgnoreDumbProjectiles = false, // Don't fire at non-smart projectiles.
 			LockedSmartOnly = false, // Only fire at smart projectiles that are locked on to parent grid.
-			MinimumDiameter = 0, // 0 = unlimited, Minimum radius of threat to engage.
-			MaximumDiameter = 0, // 0 = unlimited, Maximum radius of threat to engage.
 			MaxTargetDistance = 900, // 0 = unlimited, Maximum target distance that targets will be automatically shot at.
 			MinTargetDistance = 0, // 0 = unlimited, Min target distance that targets will be automatically shot at.
-			TopTargets = 0, // 0 = unlimited, max number of top targets to randomize between.
-			TopBlocks = 0, // 0 = unlimited, max number of blocks to randomize between
+			TopTargets = 1, // 0 = unlimited, max number of top targets to randomize between.
+			TopBlocks = 1, // 0 = unlimited, max number of blocks to randomize between
 			StopTrackingSpeed = 1000, // do not track target threats traveling faster than this speed
 		};
 
@@ -60,27 +59,20 @@ namespace Scripts {
 			MaxAzimuth = 180,
 			MinElevation = -20,
 			MaxElevation = 90,
-			FixedOffset = false,
+			HomeAzimuth = 0, // Default resting rotation angle
+			HomeElevation = 0, // Default resting elevation
 			InventorySize = 0.8f,
-			//Offset = new Vector3D(0f,0f,0f),
 			Type = BlockWeapon, // BlockWeapon, HandWeapon, Phantom 
 			IdlePower = 0.01f, // Power draw in MW while not charging, or for non-energy weapons. Defaults to 0.001.
-			CriticalReaction = new CriticalDef
-			{
-				Enable = false, // Enables Warhead behaviour.
-				DefaultArmedTimer = 120, // Sets default countdown duration.
-				PreArmed = false, // Whether the warhead is armed by default when placed. Best left as false.
-				TerminalControls = true, // Whether the warhead should have terminal controls for arming and detonation.
-				AmmoRound = "AmmoType2", // Optional. If specified, the warhead will always use this ammo on detonation rather than the currently selected ammo.
-			},
 		};
 
 		private OtherDef Ballistics_Gatlings_Hardpoint_Other = new OtherDef {
 			ConstructPartCap = 21, // Maximum number of blocks with this weapon on a grid; 0 = unlimited.
 			RotateBarrelAxis = 3, // For spinning barrels, which axis to spin the barrel around; 0 = none.
-			EnergyPriority = 0, // Deprecated.
 			MuzzleCheck = false, // Whether the weapon should check LOS from each individual muzzle in addition to the scope.
-			Debug = false, // Force enables debug mode.
+			DisableLosCheck = false, // Do not perform LOS checks at all... not advised for self tracking weapons
+			NoVoxelLosCheck = false, // If set to true this ignores voxels for LOS checking.. which means weapons will fire at targets behind voxels.  However, this can save cpu in some situations, use with caution.
+ 			Debug = false, // Force enables debug mode.
 			RestrictionRadius = 0, // Prevents other blocks of this type from being placed within this distance of the centre of the block.
 			CheckInflatedBox = false, // If true, the above distance check is performed from the edge of the block instead of the centre.
 			CheckForAnyWeapon = false, // If true, the check will fail if ANY weapon is present, not just weapons of the same subtype.
@@ -109,8 +101,9 @@ namespace Scripts {
 			StayCharged = false, // Will start recharging whenever power cap is not full
 			MaxActiveProjectiles = 0, // Maximum number of drones in flight (only works for drone launchers)
 			MaxReloads = 0, // Maximum number of reloads in the LIFETIME of a weapon
+			GoHomeToReload = false, // Tells the weapon it must be in the home position before it can reload.
+			DropTargetUntilLoaded = false, // If true this weapon will drop the target when its out of ammo and until its reloaded.
 		};
-
 		private HardPointAudioDef Ballistics_Gatlings_Hardpoint_Audio = new HardPointAudioDef {
 			PreFiringSound = "", 
 			FiringSound = "MD_GatlingLoopFire", // MD_GatlingBlisterFire, WepTurretInteriorFire, ArcWepShipGatlingShot, MD_GatlingLoop
@@ -183,9 +176,7 @@ namespace Scripts {
 				Ejector = "ejector",
 				Scope = "camera", // Where line of sight checks are performed from. Must be clear of block collision.
             },
-
             Targeting = Ballistics_Gatlings_Targeting_T2,
-
             HardPoint = new HardPointDef
             {
                 PartName = "Sentinel Gatling", // name of weapon in terminal
@@ -193,30 +184,18 @@ namespace Scripts {
                 AimingTolerance = 30f, // 0 - 180 firing angle
                 AimLeadingPrediction = Advanced, // Off, Basic, Accurate, Advanced
                 DelayCeaseFire = 20, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-                CanShootSubmerged = false,
-				
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicTurret,
-				
                 HardWare = Ballistics_Gatlings_Hardpoint_HardWare,
-				
                 Other = Ballistics_Gatlings_Hardpoint_Other,
-				
                 Loading = Ballistics_Gatlings_Hardpoint_Loading,
-                
 				Audio = Ballistics_Gatlings_Hardpoint_Audio,
-				
                 Graphics = Ballistics_Gatlings_Hardpoint_Graphics,
-				
             },
-       
             Ammos = new [] {
                 NATO_25x184mm,
             },
-             //Animations= Lancer_Recoil
-            // Don't edit below this line
         };
 
         WeaponDefinition LargeGatlingTurret => new WeaponDefinition {
@@ -239,9 +218,7 @@ namespace Scripts {
                     "muzzle_projectile_1",
                 },
             },
-			
             Targeting = Ballistics_Gatlings_Targeting_T2,
-			
             HardPoint = new HardPointDef
             {
                 PartName = "CIWS Large", // name of weapon in terminal
@@ -249,30 +226,18 @@ namespace Scripts {
                 AimingTolerance = 30f, // 0 - 180 firing angle
                 AimLeadingPrediction = Advanced, // Off, Basic, Accurate, Advanced
                 DelayCeaseFire = 20, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-                CanShootSubmerged = false,
-				
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicTurret,
-				
                 HardWare = Ballistics_Gatlings_Hardpoint_HardWare,
-				
                 Other = Ballistics_Gatlings_Hardpoint_Other,
-				
                 Loading = Ballistics_Gatlings_Hardpoint_Loading,
-                
 				Audio = Ballistics_Gatlings_Hardpoint_Audio,
-				
                 Graphics = Ballistics_Gatlings_Hardpoint_Graphics,
-				
             },
-       
 			Ammos = new[] {
                 NATO_25x184mm,
             },
-            //Animations = MD_Gatling_Animations,
-            // Don't edit below this line
         };
 
         WeaponDefinition SmallGatlingTurret => new WeaponDefinition {
@@ -296,9 +261,7 @@ namespace Scripts {
                     "muzzle_projectile",
                 },
             },
-
             Targeting = Ballistics_Gatlings_Targeting_T1,
-
             HardPoint = new HardPointDef
             {
                 PartName = "CWIS Small", // name of weapon in terminal
@@ -306,13 +269,9 @@ namespace Scripts {
                 AimingTolerance = 30f, // 0 - 180 firing angle
                 AimLeadingPrediction = Advanced, // Off, Basic, Accurate, Advanced
                 DelayCeaseFire = 20, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-                CanShootSubmerged = false,
-				
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicTurret,
-				
                 HardWare = new HardwareDef
                 {
                     RotateRate = 0.03f,
@@ -321,30 +280,19 @@ namespace Scripts {
                     MaxAzimuth = 180,
                     MinElevation = -10,
                     MaxElevation = 90,
-                    FixedOffset = false,
                     InventorySize = 0.4f,
                     Offset = Vector(x: 0, y: 0, z: 0),
 					Type = BlockWeapon, // BlockWeapon, HandWeapon, Phantom 
 					IdlePower = 0.01f, // Power draw in MW while not charging, or for non-energy weapons. Defaults to 0.001.
-					
-					CriticalReaction = Common_Weapons_Hardpoint_Hardware_CriticalReaction_None,
                 },
-				
                 Other = Ballistics_Gatlings_Hardpoint_Other,
-
                 Loading = Ballistics_Gatlings_Hardpoint_Loading,
-                
 				Audio = Ballistics_Gatlings_Hardpoint_Audio,
-				
                 Graphics = Ballistics_Gatlings_Hardpoint_Graphics,
-				
             },
-
 			Ammos = new[] {
                 NATO_25x184mm,
             },
-            //Animations = AdvancedAnimation,
-            // Don't edit below this line
         };
 
         WeaponDefinition SmallGatlingGun => new WeaponDefinition {
@@ -378,56 +326,30 @@ namespace Scripts {
                     "muzzle_projectile",
                 },
             },
-
             Targeting = Common_Weapons_Targeting_Fixed_NoTargeting,
-
             HardPoint = new HardPointDef
             {
                 PartName = "Gatling Fixed", // name of weapon in terminal
                 DeviateShotAngle = 0.4f,
-                AimingTolerance = 0f, // 0 - 180 firing angle
                 AimLeadingPrediction = Off, // Off, Basic, Accurate, Advanced
-                DelayCeaseFire = 0, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-                CanShootSubmerged = false,
-				
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicFixed_NoTracking,
-				
                 HardWare = new HardwareDef
                 {
-                    RotateRate = 0.00f,
-                    ElevateRate = 0.00f,
-                    MinAzimuth = 0,
-                    MaxAzimuth = 0,
-                    MinElevation = 0,
-                    MaxElevation = 0,
-                    FixedOffset = false,
                     InventorySize = 0.2f,
                     Offset = Vector(x: 0, y: 0, z: 0),
 					Type = BlockWeapon, // BlockWeapon, HandWeapon, Phantom 
 					IdlePower = 0.001f, // Power draw in MW while not charging, or for non-energy weapons. Defaults to 0.001.
-					
-					CriticalReaction = Common_Weapons_Hardpoint_Hardware_CriticalReaction_None,
                 },
-				
                 Other = Ballistics_Gatlings_Hardpoint_Other,
-
                 Loading = Ballistics_Gatlings_Hardpoint_Loading,
-                
 				Audio = Ballistics_Gatlings_Hardpoint_Audio,
-				
                 Graphics = Ballistics_Gatlings_Hardpoint_Graphics,
-				
             },
-
 			Ammos = new[] {
                 NATO_25x184mm,
-
             },
-            //Animations = AdvancedAnimation,
-            // Don't edit below this line
         };
 
         WeaponDefinition SmallGatlingGun_Gimbal => new WeaponDefinition {
@@ -445,30 +367,22 @@ namespace Scripts {
                         DurabilityMod = 0.5f,
                         IconName = "TestIcon.dds",
                     },
-
                 },
                 Muzzles = new []
                 {
                     "muzzle_projectile",
                 },
             },
-
             Targeting = Ballistics_Gatlings_Targeting_T2,
-
             HardPoint = new HardPointDef
             {
                 PartName = "Gatling Gimbal", // name of weapon in terminal
                 DeviateShotAngle = 0.3f,
                 AimingTolerance = 7f, // 0 - 180 firing angle
                 AimLeadingPrediction = Advanced, // Off, Basic, Accurate, Advanced
-                DelayCeaseFire = 0, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-                CanShootSubmerged = false,
-				
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicTurret,
-				
                 HardWare = new HardwareDef
                 {
                     RotateRate = 0.01f,
@@ -477,35 +391,24 @@ namespace Scripts {
                     MaxAzimuth = 15,
                     MinElevation = -15,
                     MaxElevation = 15,
-                    FixedOffset = false,
                     InventorySize = 0.2f,
                     Offset = Vector(x: 0, y: 0, z: 0),
 					Type = BlockWeapon, // BlockWeapon, HandWeapon, Phantom 
 					IdlePower = 0.005f, // Power draw in MW while not charging, or for non-energy weapons. Defaults to 0.001.
-					
-					CriticalReaction = Common_Weapons_Hardpoint_Hardware_CriticalReaction_None,
 				},
-				
                 Other = Ballistics_Gatlings_Hardpoint_Other,
-
                 Loading = Ballistics_Gatlings_Hardpoint_Loading,
-                
 				Audio = Ballistics_Gatlings_Hardpoint_Audio,
-				
                 Graphics = Ballistics_Gatlings_Hardpoint_Graphics,
-				
             },
 
 			Ammos = new[] {
                 NATO_25x184mm,
             },
-            //Animations = AdvancedAnimation,
-            // Don't edit below this line
         };
 		
         WeaponDefinition AryxVulcanTurret => new WeaponDefinition
         {
-
             Assignments = new ModelAssignmentsDef
             {
                 MountPoints = new[] {
@@ -521,7 +424,6 @@ namespace Scripts {
                 Muzzles = new[] {
                     "muzzle_projectile_1",
                     "muzzle_projectile_2",
-
                 },
                 Ejector = "",
 				Scope = "dummy_camera",
@@ -532,17 +434,14 @@ namespace Scripts {
 					Projectiles, Characters, Grids,   // threats percieved automatically without changing menu settings
                 },
                 SubSystems = new[] {
-					Thrust, Utility, Offense, Power, Production, Jumping, Steering, Any,
+					Any,
                 },
                 ClosestFirst = true, // tries to pick closest targets first (blocks on grids, projectiles, etc...).
                 IgnoreDumbProjectiles = false, // Don't fire at non-smart projectiles.
                 LockedSmartOnly = false, // Only fire at smart projectiles that are locked on to parent grid.
-                MinimumDiameter = 0, // 0 = unlimited, Minimum radius of threat to engage.
-                MaximumDiameter = 0, // 0 = unlimited, Maximum radius of threat to engage.
                 MaxTargetDistance = 1400, // 0 = unlimited, Maximum target distance that targets will be automatically shot at.
-                MinTargetDistance = 0, // 0 = unlimited, Min target distance that targets will be automatically shot at.
                 TopTargets = 6, // 0 = unlimited, max number of top targets to randomize between.
-                TopBlocks = 0, // 0 = unlimited, max number of blocks to randomize between
+                TopBlocks = 1, // 0 = unlimited, max number of blocks to randomize between
                 StopTrackingSpeed = 1000f, // do not track target threats traveling faster than this speed
             },
             HardPoint = new HardPointDef
@@ -552,13 +451,9 @@ namespace Scripts {
                 AimingTolerance = 40f, // 0 - 180 firing angle
                 AimLeadingPrediction = Advanced, // Off, Basic, Accurate, Advanced
                 DelayCeaseFire = 60, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                AddToleranceToTracking = false,
-				CanShootSubmerged = false,
-
+                NpcSafe = true, // This is you tell npc moders that your ammo was designed with them in mind, if they tell you otherwise set this to false.
                 Ui = Common_Weapons_Hardpoint_Ui_FullDisable,
-				
                 Ai = Common_Weapons_Hardpoint_Ai_BasicTurret,
-								
                 HardWare = new HardwareDef
                 {
                     RotateRate = 0.015f,
@@ -569,31 +464,20 @@ namespace Scripts {
                     MaxElevation = 80,
                     HomeAzimuth = 0, // Default resting rotation angle
                     HomeElevation = 0, // Default resting elevation
-                    FixedOffset = false,
                     InventorySize = 2.4f,
                     //Offset = Vector(x: 0, y: 0, z: 0),
                     Type = BlockWeapon, // BlockWeapon, HandWeapon, Phantom 
-                    CriticalReaction = new CriticalDef
-                    {
-                        Enable = false, // Enables Warhead behaviour
-                        DefaultArmedTimer = 120,
-                        PreArmed = true,
-                        TerminalControls = true,
-                    },
                 },
-
                 Other = new OtherDef
                 {
                     ConstructPartCap = 21,
                     RotateBarrelAxis = 0,
-                    EnergyPriority = 0,
                     MuzzleCheck = false,
                     Debug = false,
                     RestrictionRadius = 0, // Meters, radius of sphere disable this gun if another is present
                     CheckInflatedBox = false, // if true, the bounding box of the gun is expanded by the RestrictionRadius
                     CheckForAnyWeapon = false, // if true, the check will fail if ANY gun is present, false only looks for this subtype
                 },
-
                 Loading = new LoadingDef
                 {
                     RateOfFire = 1800,
@@ -602,22 +486,8 @@ namespace Scripts {
                     TrajectilesPerBarrel = 1, // Number of Trajectiles per barrel per fire event.
                     SkipBarrels = 0,
                     ReloadTime = 240, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                    DelayUntilFire = 0, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                    HeatPerShot = 0, //heat generated per shot
-                    MaxHeat = 0, //max heat before weapon enters cooldown (70% of max heat)
-                    Cooldown = 0f, //percent of max heat to be under to start firing again after overheat accepts .2-.95
-                    HeatSinkRate = 0, //amount of heat lost per second
-                    DegradeRof = false, // progressively lower rate of fire after 80% heat threshold (80% of max heat)
-                    ShotsInBurst = 0,
-                    DelayAfterBurst = 0, // Measured in game ticks (6 = 100ms, 60 = 1 seconds, etc..).
-                    FireFull = false,
-                    GiveUpAfter = false,
-                    DeterministicSpin = false, // Spin barrel position will always be relative to initial / starting positions (spin will not be as smooth).
 					MagsToLoad = 16, // Number of physical magazines to consume on reload.
                     SpinFree = false, // Spin while not firing
-                    StayCharged = false, // Will start recharging whenever power cap is not full					
-					MaxActiveProjectiles = 0, // Maximum number of drones in flight (only works for drone launchers)
-					MaxReloads = 0, // Maximum number of reloads in the LIFETIME of a weapon
                 },
                 Audio = new HardPointAudioDef
                 {
